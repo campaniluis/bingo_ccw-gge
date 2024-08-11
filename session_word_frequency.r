@@ -9,26 +9,30 @@ df <- read_csv("tidied_text.csv")
 # Load the stop_words dataset from tidytext
 stop_words <- tidytext::stop_words
 
-# Remove stop words, group by session, count words, and get top 10 for each session
+# Create a combined session identifier
+df <- df %>%
+  mutate(session_id = paste(session_date, session_shift, sep = " - "))
+
+# Remove stop words, group by session_id, count words, and get top 10 for each session_id
 top_words_by_session <- df %>%
   anti_join(stop_words, by = "word") %>%
-  group_by(session) %>%
+  group_by(session_id) %>%
   count(word, sort = TRUE) %>%
   top_n(10, n) %>%
-  arrange(session, desc(n))
+  arrange(session_id, desc(n))
 
 # Display the results
 print(top_words_by_session)
 
 # Calculate the number of unique sessions
-num_sessions <- n_distinct(df$session)
+num_sessions <- n_distinct(df$session_id)
 
 # Create a faceted plot for each session
 ggplot(top_words_by_session, aes(x = reorder(word, n), y = n)) +
   geom_col() +
-  facet_wrap(~ session, scales = "free_y", ncol = 2) +
+  facet_wrap(~ session_id, scales = "free_y", ncol = 2) +
   coord_flip() +
-  labs(title = "Top 10 Most Common Words by session (Excluding Stop Words)",
+  labs(title = "Top 10 Most Common Words by Session (Excluding Stop Words)",
        x = "Word",
        y = "Frequency") +
   theme_minimal() +
